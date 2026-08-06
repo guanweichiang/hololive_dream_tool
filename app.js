@@ -173,7 +173,7 @@ function renderCharacterList(characters) {
   });
 }
 
-// --- 4. Core Optimization Algorithm (Includes deep copy fix & flexible talent allocation) ---
+// --- 4. Core Optimization Algorithm (Multi-level Talent System) ---
 function getCombinations(array, k) {
   const results = [];
   function helper(start, currentCombo) {
@@ -188,8 +188,31 @@ function getCombinations(array, k) {
   return results;
 }
 
-function getCharacterIntervals(cooldown, duration, hasTalent, songDuration) {
-  const actualCooldown = hasTalent ? cooldown * 0.96 : cooldown;
+function getTalentDistributions(maxPoints, numCharacters = 5) {
+  const distributions = [];
+  function backtrack(currentIndex, currentDistribution, currentSum) {
+    if (currentIndex === numCharacters) {
+      distributions.push([...currentDistribution]);
+      return;
+    }
+    // A character can receive 0, 1, 2, or 3 talent points
+    for (let pts = 0; pts <= 3; pts++) {
+      if (currentSum + pts <= maxPoints) {
+        currentDistribution.push(pts);
+        backtrack(currentIndex + 1, currentDistribution, currentSum + pts);
+        currentDistribution.pop();
+      }
+    }
+  }
+  backtrack(0, [], 0);
+  return distributions;
+}
+
+function getCharacterIntervals(cooldown, duration, investedPoints, songDuration) {
+  // investedPoints is 0, 1, 2, or 3. Each point grants 4% reduction.
+  const multiplier = 1 - (investedPoints * 0.04);
+  const actualCooldown = cooldown * multiplier;
+  
   const intervals = [];
   let triggerTime = actualCooldown;
   while (triggerTime < songDuration) {
@@ -214,32 +237,29 @@ function calculateTotalCoverage(intervals) {
   return merged.reduce((total, interval) => total + (interval[1] - interval[0]), 0);
 }
 
-function findBestTeam(characterPool, talentPoints, songDuration) {
+function findBestTeam(characterPool, maxTalentPoints, songDuration) {
   const teamCombinations = getCombinations(characterPool, 5);
   let bestResult = { coverage: 0, coveragePercent: 0, team: [] };
 
-  for (const team of teamCombinations) {
-    const usableTalents = Math.min(talentPoints, 5);
-    
-    let allTalentDistributions = [];
-    for (let k = 0; k <= usableTalents; k++) {
-      allTalentDistributions.push(...getCombinations(team, k));
-    }
+  // Maximum possible points a 5-member team can absorb is 15
+  const usableTalents = Math.min(maxTalentPoints, 15);
+  const talentDistributions = getTalentDistributions(usableTalents, 5);
 
-    for (const boostedCharacters of allTalentDistributions) {
-      const boostedIds = new Set(boostedCharacters.map(c => c.id));
+  for (const team of teamCombinations) {
+    // Test every valid point distribution across this specific 5-member team
+    for (const distribution of talentDistributions) {
       let allIntervals = [];
       let currentTimelineData = [];
 
       team.forEach((char, index) => {
-        const hasTalent = boostedIds.has(char.id);
-        const charIntervals = getCharacterIntervals(char['AP cooldown'], char['AP duration'], hasTalent, songDuration);
+        const investedPoints = distribution[index];
+        const charIntervals = getCharacterIntervals(char['AP cooldown'], char['AP duration'], investedPoints, songDuration);
         allIntervals.push(...charIntervals);
         
         currentTimelineData.push({
           name: char.character,
           color: timelineColors[index % timelineColors.length],
-          hasTalent: hasTalent,
+          investedPoints: investedPoints,
           intervals: charIntervals
         });
       });
@@ -272,11 +292,15 @@ calculateBtn.addEventListener('click', () => {
 
   calculateBtn.innerText = "Calculating, please wait...";
   
+  // Use a slight timeout so the UI can update the button text before heavy computation locks the thread
   setTimeout(() => {
     const bestTeam = findBestTeam(selectedCharacters, talentPoints, songDuration);
     
+    // Calculate how many points were actually utilized by the optimal strategy
+    const utilizedPoints = bestTeam.team.reduce((sum, char) => sum + char.investedPoints, 0);
+
     document.getElementById('summary-container').innerHTML = `
-      Duration: ${songDuration}s | Total Talent Points: ${talentPoints}<br>
+      Duration: ${songDuration}s | Points Used: ${utilizedPoints} / ${talentPoints}<br>
       Max Coverage Time: <span>${bestTeam.coverage}s</span> <br>
       Overall Coverage: <span>${bestTeam.coveragePercent}%</span>
     `;
@@ -288,7 +312,12 @@ calculateBtn.addEventListener('click', () => {
       const row = document.createElement('div');
       row.className = 'track-row';
 
-      const talentHTML = char.hasTalent ? `<span class="talent-badge">+4%</span>` : '';
+      // Update the badge to reflect the specific percentage reduction chosen
+      let talentHTML = '';
+      if (char.investedPoints > 0) {
+        talentHTML = `<span class="talent-badge">+${char.investedPoints * 4}%</span>`;
+      }
+
       const infoDiv = document.createElement('div');
       infoDiv.className = 'track-char-info';
       infoDiv.innerHTML = `${char.name} ${talentHTML}`;
