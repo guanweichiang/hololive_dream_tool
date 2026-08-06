@@ -1,5 +1,6 @@
 let allCharactersData = [];
 // Use a Set to remember which character IDs the user has checked, so state is not lost when filtering
+const characterLimits = new Map();
 const selectedIds = new Set(); 
 const timelineColors = ["#ffb6c1", "#ff7f50", "#87cefa", "#98fb98", "#ffffb3"];
 
@@ -140,36 +141,62 @@ function renderCharacterList(characters) {
 
   characters.forEach(char => {
     const stars = '★'.repeat(char.Rarity || 3) + '☆'.repeat(5 - (char.Rarity || 3));
-    const label = document.createElement('label');
-    label.className = 'character-card';
+    
+    // Change from 'label' to 'div' to prevent dropdown clicks from triggering the checkbox
+    const card = document.createElement('div');
+    card.className = 'character-card';
     
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = char.id;
-    // Check if this ID is already in the selected list
     checkbox.checked = selectedIds.has(char.id); 
 
-    // Listen for checkbox state changes
     checkbox.addEventListener('change', (e) => {
-      if (e.target.checked) {
-        selectedIds.add(char.id);
-      } else {
-        selectedIds.delete(char.id);
-      }
+      if (e.target.checked) selectedIds.add(char.id);
+      else selectedIds.delete(char.id);
       selectedCountDisplay.innerText = selectedIds.size;
     });
 
     const infoDiv = document.createElement('div');
     infoDiv.className = 'char-info';
+    
+    // Check if the user previously set a limit for this character; otherwise, default to 3
+    const currentLimit = characterLimits.has(char.id) ? characterLimits.get(char.id) : 3;
+
     infoDiv.innerHTML = `
       <span class="char-name">${char.character} <span class="rarity-star">${stars}</span></span>
       <span class="char-outfit">Outfit: ${char.outfit} | Group: ${char.group}</span>
       <span class="char-stats">⏱️ CD: ${char['AP cooldown']}s | ⏳ Duration: ${char['AP duration']}s</span>
+      <div style="margin-top: 8px; font-size: 0.8rem; color: #bbb;">
+        Max Points: 
+        <select class="char-limit-select" style="background: var(--track-bg); color: #fff; border: 1px solid #555; border-radius: 4px; padding: 2px 4px; cursor: pointer; outline: none;">
+          <option value="3" ${currentLimit === 3 ? 'selected' : ''}>3 (12%)</option>
+          <option value="2" ${currentLimit === 2 ? 'selected' : ''}>2 (8%)</option>
+          <option value="1" ${currentLimit === 1 ? 'selected' : ''}>1 (4%)</option>
+          <option value="0" ${currentLimit === 0 ? 'selected' : ''}>0 (Locked)</option>
+        </select>
+      </div>
     `;
     
-    label.appendChild(checkbox);
-    label.appendChild(infoDiv);
-    characterListDiv.appendChild(label);
+    card.appendChild(checkbox);
+    card.appendChild(infoDiv);
+
+    // Event delegation: clicking the card toggles the checkbox, UNLESS you are clicking the dropdown
+    card.addEventListener('click', (e) => {
+      if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') {
+        return; // Do nothing if interacting with the dropdown
+      }
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change')); // manually trigger change
+    });
+
+    // Save the limit to the Map when the user changes it
+    const selectElem = card.querySelector('.char-limit-select');
+    selectElem.addEventListener('change', (e) => {
+      characterLimits.set(char.id, Number(e.target.value));
+    });
+
+    characterListDiv.appendChild(card);
   });
 }
 
@@ -188,22 +215,31 @@ function getCombinations(array, k) {
   return results;
 }
 
-function getTalentDistributions(maxPoints, numCharacters = 5) {
+// NEW: Generates all valid ways to distribute points, while respecting INDIVIDUAL character limits
+function getTalentDistributions(maxGlobalPoints, team) {
   const distributions = [];
+  const numCharacters = team.length;
+  
   function backtrack(currentIndex, currentDistribution, currentSum) {
     if (currentIndex === numCharacters) {
       distributions.push([...currentDistribution]);
       return;
     }
-    // A character can receive 0, 1, 2, or 3 talent points
-    for (let pts = 0; pts <= 3; pts++) {
-      if (currentSum + pts <= maxPoints) {
+    
+    // Fetch this specific character's local limit (default to 3 if untouched)
+    const charId = team[currentIndex].id;
+    const localLimit = characterLimits.has(charId) ? characterLimits.get(charId) : 3;
+    
+    // A character can only receive points up to their local limit
+    for (let pts = 0; pts <= localLimit; pts++) {
+      if (currentSum + pts <= maxGlobalPoints) {
         currentDistribution.push(pts);
         backtrack(currentIndex + 1, currentDistribution, currentSum + pts);
         currentDistribution.pop();
       }
     }
   }
+  
   backtrack(0, [], 0);
   return distributions;
 }
@@ -240,13 +276,12 @@ function calculateTotalCoverage(intervals) {
 function findBestTeam(characterPool, maxTalentPoints, songDuration) {
   const teamCombinations = getCombinations(characterPool, 5);
   let bestResult = { coverage: 0, coveragePercent: 0, team: [] };
-
-  // Maximum possible points a 5-member team can absorb is 15
   const usableTalents = Math.min(maxTalentPoints, 15);
-  const talentDistributions = getTalentDistributions(usableTalents, 5);
 
   for (const team of teamCombinations) {
-    // Test every valid point distribution across this specific 5-member team
+    // Generate distributions tailored specifically for THIS team's individual limits
+    const talentDistributions = getTalentDistributions(usableTalents, team);
+
     for (const distribution of talentDistributions) {
       let allIntervals = [];
       let currentTimelineData = [];
