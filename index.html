@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill Coverage Optimization Tool</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎵 Team Skill Timeline Optimization</h1>
+  
+  <div class="controls-section">
+    <div class="control-group">
+      <label for="songDuration">Song Duration (s)</label>
+      <input type="number" id="songDuration" value="120" min="30" max="600">
+    </div>
+    <div class="control-group">
+      <label for="talentPoints">Talent Points (4% CD Reduction)</label>
+      <input type="number" id="talentPoints" value="3" min="0" max="5">
+    </div>
+  </div>
+
+  <h2>🌟 Select Your Characters</h2>
+  
+  <div class="filter-section">
+    
+    <div class="filter-category" id="filterGroupContainer">
+      <span class="filter-label">Group:</span>
+      <!-- JS will dynamically insert checkboxes here -->
+    </div>
+    
+    <div class="filter-category" id="filterRarityContainer">
+      <span class="filter-label">Rarity:</span>
+      <label><input type="checkbox" value="5" class="filter-rarity"> 5 Star</label>
+      <label><input type="checkbox" value="4" class="filter-rarity"> 4 Star</label>
+      <label><input type="checkbox" value="3" class="filter-rarity"> 3 Star</label>
+    </div>
+
+    <div class="filter-category" id="filterTypeContainer">
+      <span class="filter-label">Type:</span>
+      <!-- JS will dynamically insert checkboxes here -->
+    </div>
+    
+    <!-- Replace the selected-count div with this updated one containing both buttons -->
+    <div class="selected-count" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <div style="display: flex; gap: 10px;">
+        <button id="clearFiltersBtn" style="font-size: 0.85rem; padding: 5px 12px; background-color: transparent; border: 1px solid #4ade80; color: #4ade80; border-radius: 6px; cursor: pointer; transition: 0.2s;">
+          Unselect All Filters
+        </button>
+        <button id="clearCharactersBtn" style="font-size: 0.85rem; padding: 5px 12px; background-color: transparent; border: 1px solid #ff7f50; color: #ff7f50; border-radius: 6px; cursor: pointer; transition: 0.2s;">
+          Unselect All Characters
+        </button>
+      </div>
+      <div>Selected: <span id="selectedCountDisplay">0</span> Characters</div>
+    </div>
+  </div>
+
+  <div class="character-list" id="characterList">
+    <div style="padding: 20px; color: #aaa;">Loading database...</div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+    <button id="calculateBtn">Calculate Best 5-Member Team 🚀</button>
+  </div>
+
+  <div class="result-section" id="resultSection">
+    <h2>🏆 Optimization Results</h2>
+    <div id="summary-container" class="summary"></div>
+    <div class="timeline-wrapper" id="timeline-wrapper"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
