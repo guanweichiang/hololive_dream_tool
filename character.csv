@@ -5,9 +5,9 @@ id,character,outfit,Rarity,Type,group,AP cooldown,AP duration
 4,Sakura Miko,We are hololive!,3,Cute,Gen 0,30,13
 5,Hoshimachi Suisei,We are hololive!,3,Cute,Gen 0,23,7
 6,Aki Rosethal,We are hololive!,3,Pure ,Gen 1,20,7
-7,Akai Haato,We are hololive!,3,Happy,Gen1,27,12
+7,Akai Haato,We are hololive!,3,Happy,Gen 1,27,12
 8,Shirakami Fubuki,We are hololive!,3,Happy,"Gen 1, Gamers",30,13
-9,Natsuiro Matsuri,We are hololive!,3,Cute,Gen1,30,13
+9,Natsuiro Matsuri,We are hololive!,3,Cute,Gen 1,30,13
 10,Nakiri Ayame,We are hololive!,3,Happy,Gen 2,17,6
 11,Yuzuki Choco,We are hololive!,3,Cute,Gen 2,30,13
 12,Oozora Subaru,We are hololive!,3,Pure,Gen 2,30,13
@@ -59,9 +59,9 @@ id,character,outfit,Rarity,Type,group,AP cooldown,AP duration
 58,Sakura Miko,Embrace the Glow,4,Pure,Gen 0,23,10
 59,Hoshimachi Suisei,Radiant Floor Star,4,Happy,Gen 0,31,10
 60,Aki Rosethal,Curious Elf Melody,4,Happy,Gen 1,23,10
-61,Akai Haato,Wild Heartbeat Gig,4,Cute,Gen1,24,10
+61,Akai Haato,Wild Heartbeat Gig,4,Cute,Gen 1,24,10
 62,Shirakami Fubuki,Max-Gear Fox Show,4,Cute,"Gen 1, Gamers",23,10
-63,Natsuiro Matsuri,Sweet Cheeky Stage,4,Pure,Gen1,24,10
+63,Natsuiro Matsuri,Sweet Cheeky Stage,4,Pure,Gen 1,24,10
 64,Nakiri Ayame,Demnic Encore,4,Cute,Gen 2,29,9
 65,Yuzuki Choco,Dr. Allure's Live,4,Pure,Gen 2,28,10
 66,Oozora Subaru,Radiant Soul Jam,4,Happy,Gen 2,34,11
@@ -113,9 +113,9 @@ id,character,outfit,Rarity,Type,group,AP cooldown,AP duration
 112,Sakura Miko,Sakura Bloom,5,Happy,Gen 0,15,6
 113,Hoshimachi Suisei,Comet Heart Stealer,5,Pure,Gen 0,29,10
 114,Aki Rosethal,Etheeal Half-Elf,5,Cute,Gen 1,21,8
-115,Akai Haato,Snack-Time Rebel,5,Pure,Gen1,19,7
+115,Akai Haato,Snack-Time Rebel,5,Pure,Gen 1,19,7
 116,Shirakami Fubuki,Kitsune's Rite,5,Pure,"Gen 1, Gamers",30,11
-117,Natsuiro Matsuri,Vivid Cheer Spirit,5,Happy,Gen1,23,8
+117,Natsuiro Matsuri,Vivid Cheer Spirit,5,Happy,Gen 1,23,8
 118,Nakiri Ayame,Spirit Realm Lantern,5,Pure,Gen 2,29,10
 119,Yuzuki Choco,Fatal Temptation,5,Happy,Gen 2,20,7
 120,Oozora Subaru,Duckling Noon Jam,5,Cute,Gen 2,34,12
