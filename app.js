@@ -330,15 +330,27 @@ calculateBtn.addEventListener('click', () => {
   // Use a slight timeout so the UI can update the button text before heavy computation locks the thread
   setTimeout(() => {
     const bestTeam = findBestTeam(selectedCharacters, talentPoints, songDuration);
-    const soloAnalysis = analyzeSoloUptime(bestTeam.team);
-    // Calculate how many points were actually utilized by the optimal strategy
+    
+    // Get the sorted array of characters based on solo uptime
+    const rankedSoloUptime = analyzeSoloUptime(bestTeam.team);
     const utilizedPoints = bestTeam.team.reduce((sum, char) => sum + char.investedPoints, 0);
+
+    // Build a neat HTML list for the rankings
+    let rankingHtml = `<div style="margin-top: 10px;"><strong>Rate UP Upgrade Priority (Solo Uptime):</strong><br>`;
+    rankedSoloUptime.forEach((char, index) => {
+      rankingHtml += `<span style="display: inline-block; width: 25px; color: #aaa;">#${index + 1}</span> <span style="color: #ffb6c1; font-weight: bold;">${char.name}</span> <span style="color: #aaa; font-size: 0.9em;">(${char.duration.toFixed(2)}s)</span><br>`;
+    });
+    rankingHtml += `</div>`;
 
     document.getElementById('summary-container').innerHTML = `
       Duration: ${songDuration}s | Points Used: ${utilizedPoints} / ${talentPoints}<br>
       Max Coverage Time: <span>${bestTeam.coverage}s</span> <br>
-      Overall Coverage: <span>${bestTeam.coveragePercent}%</span>
+      Overall Coverage: <span>${bestTeam.coveragePercent}%</span><br>
+      <hr style="border-top: 1px dashed var(--accent-color); margin: 10px 0; opacity: 0.5;" />
+      ${rankingHtml}
     `;
+
+    // ... (Keep the rest of your timeline rendering code here as is)
 
     const timelineWrapper = document.getElementById('timeline-wrapper');
     timelineWrapper.innerHTML = '';
@@ -397,7 +409,6 @@ calculateBtn.addEventListener('click', () => {
 function analyzeSoloUptime(teamData) {
   const events = [];
   
-  // 1. Create events for start and end of every skill
   teamData.forEach(char => {
     char.intervals.forEach(interval => {
       events.push({ time: interval[0], type: 'start', name: char.name });
@@ -405,7 +416,6 @@ function analyzeSoloUptime(teamData) {
     });
   });
 
-  // 2. Sort events chronologically. If times match, process 'end' before 'start'
   events.sort((a, b) => {
     if (a.time !== b.time) return a.time - b.time;
     return a.type === 'end' ? -1 : 1;
@@ -417,17 +427,14 @@ function analyzeSoloUptime(teamData) {
   const activeMembers = new Set();
   let prevTime = 0;
 
-  // 3. Sweep through the timeline
   events.forEach(event => {
     const timeElapsed = event.time - prevTime;
     
-    // If exactly one member is active, add to their solo duration
     if (activeMembers.size === 1) {
       const activeMember = Array.from(activeMembers)[0];
       soloDurations[activeMember] += timeElapsed;
     }
 
-    // Update active roster
     if (event.type === 'start') {
       activeMembers.add(event.name);
     } else {
@@ -436,15 +443,10 @@ function analyzeSoloUptime(teamData) {
     prevTime = event.time;
   });
 
-  // Find the character with the maximum solo time
-  let bestMember = null;
-  let maxSoloTime = -1;
-  for (const [name, duration] of Object.entries(soloDurations)) {
-    if (duration > maxSoloTime) {
-      maxSoloTime = duration;
-      bestMember = name;
-    }
-  }
+  // NEW: Sort all members by their solo time in descending order
+  const rankedMembers = Object.entries(soloDurations)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => ({ name: entry[0], duration: entry[1] }));
 
-  return { bestMember, maxSoloTime, breakdown: soloDurations };
+  return rankedMembers; // Returns an ordered array from 1st to 5th
 }
