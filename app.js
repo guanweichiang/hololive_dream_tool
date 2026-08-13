@@ -330,7 +330,7 @@ calculateBtn.addEventListener('click', () => {
   // Use a slight timeout so the UI can update the button text before heavy computation locks the thread
   setTimeout(() => {
     const bestTeam = findBestTeam(selectedCharacters, talentPoints, songDuration);
-    
+    const soloAnalysis = analyzeSoloUptime(bestTeam.team);
     // Calculate how many points were actually utilized by the optimal strategy
     const utilizedPoints = bestTeam.team.reduce((sum, char) => sum + char.investedPoints, 0);
 
@@ -392,3 +392,59 @@ calculateBtn.addEventListener('click', () => {
     calculateBtn.innerText = "Calculate Best 5-Member Team 🚀";
   }, 50); 
 });
+
+// NEW: Analyzes a generated team's intervals to find solo uptime for each character
+function analyzeSoloUptime(teamData) {
+  const events = [];
+  
+  // 1. Create events for start and end of every skill
+  teamData.forEach(char => {
+    char.intervals.forEach(interval => {
+      events.push({ time: interval[0], type: 'start', name: char.name });
+      events.push({ time: interval[1], type: 'end', name: char.name });
+    });
+  });
+
+  // 2. Sort events chronologically. If times match, process 'end' before 'start'
+  events.sort((a, b) => {
+    if (a.time !== b.time) return a.time - b.time;
+    return a.type === 'end' ? -1 : 1;
+  });
+
+  const soloDurations = {};
+  teamData.forEach(char => soloDurations[char.name] = 0);
+  
+  const activeMembers = new Set();
+  let prevTime = 0;
+
+  // 3. Sweep through the timeline
+  events.forEach(event => {
+    const timeElapsed = event.time - prevTime;
+    
+    // If exactly one member is active, add to their solo duration
+    if (activeMembers.size === 1) {
+      const activeMember = Array.from(activeMembers)[0];
+      soloDurations[activeMember] += timeElapsed;
+    }
+
+    // Update active roster
+    if (event.type === 'start') {
+      activeMembers.add(event.name);
+    } else {
+      activeMembers.delete(event.name);
+    }
+    prevTime = event.time;
+  });
+
+  // Find the character with the maximum solo time
+  let bestMember = null;
+  let maxSoloTime = -1;
+  for (const [name, duration] of Object.entries(soloDurations)) {
+    if (duration > maxSoloTime) {
+      maxSoloTime = duration;
+      bestMember = name;
+    }
+  }
+
+  return { bestMember, maxSoloTime, breakdown: soloDurations };
+}
